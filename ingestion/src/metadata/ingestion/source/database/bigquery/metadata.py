@@ -15,6 +15,7 @@ import os
 import traceback
 from typing import Iterable, List, Optional, Tuple
 
+from copy import deepcopy
 from google import auth
 from google.cloud.datacatalog_v1 import PolicyTagManagerClient
 from sqlalchemy.engine.reflection import Inspector
@@ -199,10 +200,10 @@ class BigquerySource(StoredProcedureMixin, CommonDbSourceService):
     """
 
     def __init__(self, config, metadata_config):
-        super().__init__(config, metadata_config)
         self.temp_credentials = None
         self.client = None
         self.project_ids = self.set_project_id()
+        super().__init__(config, metadata_config)
 
     @classmethod
     def create(cls, config_dict, metadata_config: OpenMetadataConnection):

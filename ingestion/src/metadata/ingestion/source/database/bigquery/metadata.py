@@ -54,6 +54,7 @@ from metadata.ingestion.api.models import Either, StackTraceError
 from metadata.ingestion.api.steps import InvalidSourceException
 from metadata.ingestion.models.ometa_classification import OMetaTagAndClassification
 from metadata.ingestion.source.connections import get_test_connection_fn
+from metadata.ingestion.source.database.bigquery.connection import get_connection
 from metadata.ingestion.source.database.bigquery.helper import get_inspector_details
 from metadata.ingestion.source.database.bigquery.models import (
     STORED_PROC_LANGUAGE_MAP,
@@ -199,10 +200,12 @@ class BigquerySource(StoredProcedureMixin, CommonDbSourceService):
     """
 
     def __init__(self, config, metadata_config):
-        self.temp_credentials = None
-        self.client = None
+        self.service_connection = config.serviceConnection.__root__.config
+        self.engine = get_connection(self.service_connection)
         self.project_ids = self.set_project_id()
         super().__init__(config, metadata_config)
+        self.temp_credentials = None
+        self.client = None
 
     @classmethod
     def create(cls, config_dict, metadata_config: OpenMetadataConnection):
@@ -220,7 +223,7 @@ class BigquerySource(StoredProcedureMixin, CommonDbSourceService):
         return project_ids if isinstance(project_ids, list) else [project_ids]
 
     def test_connection(self) -> None:
-        for project_id in self.set_project_id():
+        for project_id in self.project_ids:
             self.set_inspector(project_id)
             test_connection_fn = get_test_connection_fn(self.service_connection)
             test_connection_fn(self.metadata, self.engine, self.service_connection)

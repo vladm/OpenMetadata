@@ -39,9 +39,6 @@ from metadata.generated.schema.entity.data.table import (
 from metadata.generated.schema.entity.services.connections.database.bigQueryConnection import (
     BigQueryConnection,
 )
-from metadata.generated.schema.entity.services.connections.metadata.openMetadataConnection import (
-    OpenMetadataConnection,
-)
 from metadata.generated.schema.metadataIngestion.workflow import (
     Source as WorkflowSource,
 )
@@ -53,6 +50,7 @@ from metadata.generated.schema.type.tagLabel import TagLabel
 from metadata.ingestion.api.models import Either, StackTraceError
 from metadata.ingestion.api.steps import InvalidSourceException
 from metadata.ingestion.models.ometa_classification import OMetaTagAndClassification
+from metadata.ingestion.ometa.ometa_api import OpenMetadata
 from metadata.ingestion.source.connections import get_test_connection_fn
 from metadata.ingestion.source.database.bigquery.connection import get_connection
 from metadata.ingestion.source.database.bigquery.helper import get_inspector_details
@@ -199,23 +197,23 @@ class BigquerySource(StoredProcedureMixin, CommonDbSourceService):
     Database metadata from Bigquery Source
     """
 
-    def __init__(self, config, metadata_config):
+    def __init__(self, config, metadata):
         self.service_connection = config.serviceConnection.__root__.config
         self.engine = get_connection(self.service_connection)
         self.project_ids = self.set_project_id()
-        super().__init__(config, metadata_config)
+        super().__init__(config, metadata)
         self.temp_credentials = None
         self.client = None
 
     @classmethod
-    def create(cls, config_dict, metadata_config: OpenMetadataConnection):
+    def create(cls, config_dict, metadata: OpenMetadata):
         config: WorkflowSource = WorkflowSource.parse_obj(config_dict)
         connection: BigQueryConnection = config.serviceConnection.__root__.config
         if not isinstance(connection, BigQueryConnection):
             raise InvalidSourceException(
                 f"Expected BigQueryConnection, but got {connection}"
             )
-        return cls(config, metadata_config)
+        return cls(config, metadata)
 
     @staticmethod
     def set_project_id() -> List[str]:
